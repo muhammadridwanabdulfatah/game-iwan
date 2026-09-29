@@ -2,9 +2,14 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2D Ninja Fighting - Rounds System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>2D Ninja Fighting - Mobile Ready</title>
     <style>
+        * {
+            box-sizing: border-box;
+            touch-action: manipulation;
+        }
+
         body {
             margin: 0;
             background: #030305;
@@ -13,10 +18,11 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            height: 100vh;
-            overflow: hidden;
+            justify-content: flex-start;
+            min-height: 100vh;
+            overflow-x: hidden;
             user-select: none;
+            -webkit-user-select: none;
         }
 
         #game-container {
@@ -28,6 +34,8 @@
             box-shadow: 0 0 60px rgba(255, 69, 0, 0.25), 0 0 30px rgba(0, 0, 0, 0.95);
             overflow: hidden;
             background: #000;
+            transform-origin: top center;
+            margin-top: 10px;
         }
 
         canvas { display: block; }
@@ -177,6 +185,7 @@
             text-shadow: 0 0 25px #ff3d00;
             margin-bottom: 20px;
             letter-spacing: 3px;
+            text-align: center;
         }
 
         .menu-subtitle {
@@ -186,6 +195,7 @@
             font-weight: bold;
             letter-spacing: 1px;
             text-shadow: 0 0 8px rgba(0,229,255,0.4);
+            text-align: center;
         }
 
         .menu-btn {
@@ -219,6 +229,7 @@
             text-shadow: 0 0 12px #00e5ff;
             margin-bottom: 15px;
             font-weight: bold;
+            text-align: center;
         }
 
         .grid-container {
@@ -226,6 +237,9 @@
             grid-template-columns: repeat(6, 100px);
             gap: 12px;
             margin-bottom: 15px;
+            max-height: 350px;
+            overflow-y: auto;
+            padding: 5px;
         }
 
         .char-card {
@@ -257,7 +271,7 @@
         #game-over-overlay { display: none; z-index: 20; }
 
         #winnerText {
-            font-size: 52px;
+            font-size: 42px;
             font-weight: 900;
             font-style: italic;
             color: #fff;
@@ -265,9 +279,10 @@
             letter-spacing: 3px;
             margin-bottom: 25px;
             text-align: center;
+            padding: 0 10px;
         }
 
-        .btn-group { display: flex; gap: 20px; }
+        .btn-group { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
 
         .action-btn {
             background: #1e1e28;
@@ -287,6 +302,67 @@
         .btn-mainmenu { border-color: #ff1744; color: #ff1744; }
         .btn-mainmenu:hover { background: #ff1744; color: #fff; box-shadow: 0 0 20px #ff1744; }
 
+        /* Mobile Touch Controls Overlay */
+        #mobile-controls {
+            display: none;
+            width: 960px;
+            max-width: 100%;
+            margin-top: 10px;
+            justify-content: space-between;
+            padding: 0 10px;
+            z-index: 25;
+        }
+
+        .touch-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .dpad-container {
+            display: grid;
+            grid-template-columns: repeat(3, 50px);
+            grid-template-rows: repeat(2, 50px);
+            gap: 5px;
+        }
+
+        .touch-btn {
+            background: rgba(40, 40, 60, 0.75);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            transition: background 0.1s;
+        }
+
+        .touch-btn:active, .touch-btn.active {
+            background: rgba(255, 215, 0, 0.4);
+            border-color: #ffd700;
+        }
+
+        .action-pads {
+            display: grid;
+            grid-template-columns: repeat(2, 55px);
+            grid-template-rows: repeat(2, 55px);
+            gap: 8px;
+        }
+
+        .btn-ulti-touch {
+            grid-column: span 2;
+            height: 45px;
+            background: linear-gradient(135deg, #b71c1c, #ff1744);
+            border-color: #ffd700;
+            color: #ffd700;
+            font-size: 13px;
+            letter-spacing: 1px;
+        }
+
         #controls-info {
             margin-top: 10px;
             font-size: 13px;
@@ -297,6 +373,36 @@
             border-radius: 8px;
             border: 1px solid #444;
             line-height: 1.5;
+            max-width: 960px;
+        }
+
+        /* Responsif untuk layar HP kecil */
+        @media (max-width: 980px) {
+            body {
+                justify-content: flex-start;
+                padding-top: 5px;
+            }
+            #game-container {
+                width: 100vw;
+                height: 54vw;
+                max-height: 520px;
+                border-radius: 0;
+                border-left: none;
+                border-right: none;
+            }
+            #mobile-controls {
+                display: flex;
+                width: 100vw;
+            }
+            .grid-container {
+                grid-template-columns: repeat(3, 90px);
+            }
+            .overlay-menu h1 {
+                font-size: 30px;
+            }
+            #controls-info {
+                display: none; /* Sembunyikan panduan keyboard di HP */
+            }
         }
     </style>
 </head>
@@ -366,6 +472,27 @@
         <canvas id="gameCanvas" width="960" height="520"></canvas>
     </div>
 
+    <!-- Tombol Kontrol Layar Sentuh untuk HP -->
+    <div id="mobile-controls">
+        <div class="touch-group">
+            <div class="dpad-container">
+                <div></div>
+                <button class="touch-btn" id="btn-jump">▲</button>
+                <div></div>
+                <button class="touch-btn" id="btn-left">◀</button>
+                <button class="touch-btn" id="btn-down">▼</button>
+                <button class="touch-btn" id="btn-right">▶</button>
+            </div>
+        </div>
+        <div class="touch-group">
+            <div class="action-pads">
+                <button class="touch-btn" id="btn-punch">P</button>
+                <button class="touch-btn" id="btn-spec">S</button>
+                <button class="touch-btn btn-ulti-touch" id="btn-ulti">ULTI</button>
+            </div>
+        </div>
+    </div>
+
     <div id="controls-info">
         <strong>P1:</strong> [A]/[D] Jalan | [W] Lompat | <strong>[S] Block</strong> | [F] Pukul | [G] Jurus | <strong style="color:#ffd700;">[H] ULTI</strong><br>
         <strong>P2 / Bot:</strong> [Panah] Jalan/Jump/Block | [L] Pukul | [K] Jurus | <strong style="color:#ffd700;">[J] ULTI</strong>
@@ -374,6 +501,21 @@
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+
+        // Auto Scale Canvas untuk Mobile agar pas di layar kecil
+        function resizeGame() {
+            const container = document.getElementById('game-container');
+            if (window.innerWidth <= 980) {
+                const scale = window.innerWidth / 960;
+                container.style.transform = `scale(${scale})`;
+                document.body.style.height = `${(520 * scale) + 160}px`;
+            } else {
+                container.style.transform = 'scale(1)';
+                document.body.style.height = '100vh';
+            }
+        }
+        window.addEventListener('resize', resizeGame);
+        window.addEventListener('load', resizeGame);
 
         const AudioFX = {
             ctx: null,
@@ -1627,6 +1769,7 @@
 
         animate();
 
+        // Keyboard Listeners
         window.addEventListener('keydown', (e) => {
             if (gameOver) {
                 if (e.key === 'r' || e.key === 'R') rematchGame();
@@ -1664,6 +1807,52 @@
                 case 'ArrowLeft': keys.ArrowLeft.pressed = false; break;
                 case 'ArrowDown': keys.ArrowDown.pressed = false; break;
             }
+        });
+
+        // Touch Control Listeners untuk HP / Mobile
+        function bindTouchButton(id, startCallback, endCallback) {
+            const btn = document.getElementById(id);
+            if (!btn) return;
+
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                AudioFX.init();
+                btn.classList.add('active');
+                if (startCallback) startCallback();
+            });
+
+            btn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                btn.classList.remove('active');
+                if (endCallback) endCallback();
+            });
+
+            btn.addEventListener('mousedown', (e) => {
+                AudioFX.init();
+                btn.classList.add('active');
+                if (startCallback) startCallback();
+            });
+
+            btn.addEventListener('mouseup', (e) => {
+                btn.classList.remove('active');
+                if (endCallback) endCallback();
+            });
+        }
+
+        bindTouchButton('btn-left', () => { keys.a.pressed = true; }, () => { keys.a.pressed = false; });
+        bindTouchButton('btn-right', () => { keys.d.pressed = true; }, () => { keys.d.pressed = false; });
+        bindTouchButton('btn-down', () => { keys.s.pressed = true; }, () => { keys.s.pressed = false; });
+        bindTouchButton('btn-jump', () => {
+            if (player1 && player1.isGrounded && !player1.isBlocking) player1.velocity.y = -14.5;
+        });
+        bindTouchButton('btn-punch', () => {
+            if (player1) player1.attack();
+        });
+        bindTouchButton('btn-spec', () => {
+            if (player1) player1.shootSpecial();
+        });
+        bindTouchButton('btn-ulti', () => {
+            if (player1) player1.useUltimate();
         });
     </script>
 </body>
