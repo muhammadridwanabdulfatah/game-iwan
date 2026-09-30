@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>2D Ninja Fighting - Mobile Ready</title>
     <style>
         * {
@@ -376,33 +376,88 @@
             max-width: 960px;
         }
 
-        /* Responsif untuk layar HP kecil */
-        @media (max-width: 980px) {
-            body {
-                justify-content: flex-start;
-                padding-top: 5px;
-            }
-            #game-container {
-                width: 100vw;
-                height: 54vw;
-                max-height: 520px;
-                border-radius: 0;
-                border-left: none;
-                border-right: none;
-            }
-            #mobile-controls {
-                display: flex;
-                width: 100vw;
-            }
-            .grid-container {
-                grid-template-columns: repeat(3, 90px);
-            }
-            .overlay-menu h1 {
-                font-size: 30px;
-            }
-            #controls-info {
-                display: none; /* Sembunyikan panduan keyboard di HP */
-            }
+        /* ===== Mode HP (layar sentuh, ~6.1 - 6.5 inci, landscape) ===== */
+        body.mobile {
+            position: fixed;
+            inset: 0;
+            display: block;
+            min-height: 0;
+            overflow: hidden;
+            overscroll-behavior: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body.mobile #game-container {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            margin: 0;
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
+            transform-origin: center center;
+        }
+        body.mobile #controls-info { display: none; }
+        body.mobile .menu-btn { padding: 9px 30px; margin: 5px; }
+        body.mobile .overlay-menu h1 { font-size: 38px; margin-bottom: 14px; }
+
+        /* Kontrol sentuh melayang di atas game, di pojok kiri & kanan bawah */
+        body.mobile #mobile-controls {
+            display: none;
+            position: fixed;
+            inset: 0;
+            width: auto;
+            max-width: none;
+            margin: 0;
+            padding: 0 max(env(safe-area-inset-right), 18px) max(env(safe-area-inset-bottom), 12px) max(env(safe-area-inset-left), 18px);
+            align-items: flex-end;
+            justify-content: space-between;
+            pointer-events: none;
+            z-index: 25;
+        }
+        body.mobile.in-match #mobile-controls { display: flex; }
+        body.mobile .touch-group { pointer-events: auto; }
+        body.mobile .dpad-container {
+            grid-template-columns: repeat(3, 54px);
+            grid-template-rows: repeat(2, 54px);
+            gap: 6px;
+        }
+        body.mobile .action-pads {
+            grid-template-columns: repeat(2, 60px);
+            grid-template-rows: 60px 46px;
+            gap: 8px;
+        }
+        body.mobile .btn-ulti-touch { order: 1; height: 46px; }
+        body.mobile .touch-btn {
+            background: rgba(30, 30, 50, 0.5);
+            border-color: rgba(255, 255, 255, 0.5);
+            font-size: 18px;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* Petunjuk putar layar saat HP posisi portrait */
+        #rotate-hint {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: #030305;
+            color: #ffd700;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 20px;
+        }
+        #rotate-hint .rot-icon { font-size: 56px; animation: rot 1.6s ease-in-out infinite; }
+        @keyframes rot { 0%, 30% { transform: rotate(0); } 70%, 100% { transform: rotate(-90deg); } }
+        @media (orientation: portrait) {
+            body.mobile #rotate-hint { display: flex; }
         }
     </style>
 </head>
@@ -498,29 +553,44 @@
         <strong>P2 / Bot:</strong> [Panah] Jalan/Jump/Block | [L] Pukul | [K] Jurus | <strong style="color:#ffd700;">[J] ULTI</strong>
     </div>
 
+    <div id="rotate-hint">
+        <div class="rot-icon">&#128241;</div>
+        <div>Putar HP ke posisi landscape</div>
+        <div style="font-size:13px;color:#ccc;font-weight:normal;">Game ini dimainkan dengan HP mendatar</div>
+    </div>
+
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Auto Scale Canvas untuk Mobile agar pas di layar kecil
+        // Skala game: di HP pas ke lebar DAN tinggi layar (landscape), di desktop ikut lebar jendela
         function resizeGame() {
             const container = document.getElementById('game-container');
-            if (window.innerWidth <= 980) {
-                const scale = window.innerWidth / 960;
-                container.style.transform = `scale(${scale})`;
-                document.body.style.height = `${(520 * scale) + 160}px`;
+            const isMobile = window.matchMedia('(pointer: coarse)').matches;
+            document.body.classList.toggle('mobile', isMobile);
+            const vv = window.visualViewport;
+            const vw = vv ? vv.width : window.innerWidth;
+            const vh = vv ? vv.height : window.innerHeight;
+            if (isMobile) {
+                const scale = Math.min(vw / 960, vh / 520);
+                container.style.transform = `translate(-50%, -50%) scale(${scale})`;
+                document.body.style.height = '';
             } else {
-                container.style.transform = 'scale(1)';
+                container.style.transform = `scale(${Math.min(1, vw / 980)})`;
                 document.body.style.height = '100vh';
             }
         }
         window.addEventListener('resize', resizeGame);
+        window.addEventListener('orientationchange', () => setTimeout(resizeGame, 200));
+        if (window.visualViewport) window.visualViewport.addEventListener('resize', resizeGame);
         window.addEventListener('load', resizeGame);
+        resizeGame();
 
         const AudioFX = {
             ctx: null,
             init() {
                 if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                if (this.ctx.state === 'suspended') this.ctx.resume();
             },
             playHit(isBlocked) {
                 if (!this.ctx) return;
@@ -1619,6 +1689,7 @@
 
         function animate() {
             window.requestAnimationFrame(animate);
+            document.body.classList.toggle('in-match', gameStarted && !gameOver);
 
             ctx.save();
             if (shakeTime > 0) {
@@ -1698,7 +1769,8 @@
                         player2.isAttacking = false;
                         player1.health -= player1.isBlocking ? 2 : 12;
                         updateHealthUI();
-                        addUltiGauge(player2, player1.charInfo.type, player1.isBlocking);
+                        addUltiGauge(player2, 14);
+                        triggerHitEffect(player1, player2.charInfo.type, player1.isBlocking);
                     }
                 }
 
@@ -1826,6 +1898,13 @@
                 btn.classList.remove('active');
                 if (endCallback) endCallback();
             });
+
+            btn.addEventListener('touchcancel', () => {
+                btn.classList.remove('active');
+                if (endCallback) endCallback();
+            });
+
+            btn.addEventListener('contextmenu', (e) => e.preventDefault());
 
             btn.addEventListener('mousedown', (e) => {
                 AudioFX.init();
